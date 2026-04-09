@@ -1,0 +1,63 @@
+{
+  "mappings": [
+    {
+      "name": "Validate address - success",
+      "request": {
+        "method": "POST",
+        "url": "/api/v1/addresses/validate",
+        "bodyPatterns": [
+          {
+            "matchesJsonPath": "$.streetAddress"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "valid": true,
+          "standardizedStreetAddress": "123 Main St",
+          "city": "Portland",
+          "state": "OR",
+          "zipCode": "97201",
+          "county": "Multnomah",
+          "latitude": 45.5231,
+          "longitude": -122.6765,
+          "deliverable": true
+        }
+      }
+    },
+    {
+      "name": "Validate address - invalid",
+      "request": {
+        "method": "POST",
+        "url": "/api/v1/addresses/validate",
+        "bodyPatterns": [
+          {
+            "matchesJsonPath": "$.streetAddress",
+            "contains": "INVALID"
+          }
+        ]
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "jsonBody": {
+          "valid": false,
+          "standardizedStreetAddress": null,
+          "city": null,
+          "state": null,
+          "zipCode": null,
+          "county": null,
+          "latitude": null,
+          "longitude": null,
+          "deliverable": false
+        }
+      }
+    }
+  ]
+}

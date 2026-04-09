@@ -1,0 +1,114 @@
+spring:
+  application:
+    name: rent-wrangler
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/rentwrangler
+    username: rentwrangler
+    password: rentwrangler_secret
+    hikari:
+      pool-name: RentWranglerHikariPool
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          batch_size: 25
+        order_inserts: true
+        order_updates: true
+    show-sql: false
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
+        group:
+          enabled: true
+      okhttp:
+        enabled: true
+
+# In-memory users for Basic Auth — replace with DB-backed UserDetailsService in production
+app:
+  security:
+    users:
+      - username: admin
+        password: admin123
+        roles: ADMIN,MANAGER
+      - username: manager
+        password: manager123
+        roles: MANAGER
+      - username: staff
+        password: staff123
+        roles: STAFF
+  encryption:
+    # 32-byte AES-256 key, base64-encoded — inject via secrets manager in production
+    key: "dGhpcy1pcy1hLTMyLWJ5dGUta2V5LWZvci1hZXMtMjU2"
+  address-validation:
+    base-url: http://localhost:9090
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+        register-health-indicator: true
+    instances:
+      address-validation:
+        base-config: default
+  retry:
+    configs:
+      default:
+        max-attempts: 3
+        wait-duration: 500ms
+        retry-exceptions:
+          - feign.FeignException.ServiceUnavailable
+          - java.net.ConnectException
+          - java.util.concurrent.TimeoutException
+    instances:
+      address-validation:
+        base-config: default
+  bulkhead:
+    instances:
+      address-validation:
+        max-concurrent-calls: 10
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,circuitbreakers,retries
+  health:
+    circuitbreakers:
+      enabled: true
+
+logging:
+  level:
+    com.rentwrangler: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.flywaydb: INFO
